@@ -1,3 +1,10 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Fri Dec 30 20:44:46 2016
+
+@author: Gebruiker
+"""
+
 
 import xlrd
 
@@ -5,7 +12,16 @@ from xlwt import Workbook
 
 
 wb = Workbook()
-Values = wb.add_sheet("Values")
+File = wb.add_sheet("Values")
+File.write(0, 0, "Locus")
+File.write(0, 1, "P_value")
+File.write(0,2, "Hypothese")
+File.write(0, 3, "GemA")
+File.write(0, 4, "GemB")
+File.write(0, 5, "TotA")
+File.write(0, 6, "TotB")
+File.write(0, 7, "#A")
+File.write(0, 8, "#B")
 
 
 def Openen():
@@ -32,7 +48,9 @@ def Verwerken_Anthocyanin(Anthocyanin):
     return List_Anthocyanin
 
 def Marker_values(Marker, Anthocyanin):
+    row = 0
     for key in Marker:
+        row += 1
         MarkerA = []
         MarkerB = []
         for index in range(len(Marker[key])):
@@ -42,10 +60,10 @@ def Marker_values(Marker, Anthocyanin):
             elif Marker[key][index] == "b":
                 if Anthocyanin[index] != "*":
                     MarkerB.append(Anthocyanin[index])
-        Anova(MarkerA, MarkerB, key)
+        Anova(MarkerA, MarkerB, key, row)
 
 
-def Anova(MarkerA, MarkerB, Locus):
+def Anova(MarkerA, MarkerB, Locus, row):
     SStot = 0
     SSbinnen = 0
     F = 3.91 # Waarde gekozen vanuit http://www.ablongman.com/graziano6e/text_site/MATERIAL/Stats/F-tab.pdf. Bij 150 3.91, verschil van 0,01 tussen 25, ongeveer 160 Dif bij onze berekeningen.
@@ -65,24 +83,20 @@ def Anova(MarkerA, MarkerB, Locus):
     MSbinnen = SSbinnen / 160
 
     P_value = MStussen / MSbinnen
-    Values = [Locus, P_value, GemA, GemB, sum(MarkerA), sum(MarkerB), len(MarkerA), len(MarkerB)]
+    if P_value > 0.05:
+        Hypothese ="Ja"
+    elif P_value < 0.05:
+        Hypothese = "nee"
+    
+    
+    Values = [Locus, P_value, Hypothese, GemA, GemB, sum(MarkerA), sum(MarkerB), len(MarkerA), len(MarkerB)]
 
-    ExcelPut(Values)
+    ExcelPut(Values,row)
 
 
-def ExcelPut(Values, row= 0):
-    print(row)
-    Values.write(0, 0, "Locus")
-    Values.write(0, 1, "P_value")
-    Values.write(0, 2, "GemA")
-    Values.write(0, 3, "GemB")
-    Values.write(0, 4, "TotA")
-    Values.write(0, 5, "TotB")
-    Values.write(0, 6, "#A")
-    Values.write(0, 7, "#B")
-
+def ExcelPut(Values, row):
     for column in range(len(Values)):
-        Values.write(row,column,Values[column])
+        File.write(row,column,Values[column])
     row += 1
 
 
@@ -92,6 +106,6 @@ def main():
     Marker_dictonary = Verwerken_Markers(Markers)
     List_Anthocyanin = Verwerken_Anthocyanin(Anthocyanin)
     Marker_values(Marker_dictonary, List_Anthocyanin)
-    wb.save("QTL-Values")
+    wb.save("QTL-Values.xls")
 
 main()
